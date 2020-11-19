@@ -17,7 +17,7 @@ bool isChanged = false;
 void showInitTextView(int n) {
 	int size = savingSentences.size();
 	for (int i = (n-1)*20+1; i < n*20 + 1; i++) {
-
+		/* 이곳에서 만약 사이즈 보다 크다면 빈칸 출력 말고 앞에 출력하는 for문 넣기*/
 		if (i < 10) {
 			cout << " " << i << "| ";
 		}
@@ -134,7 +134,8 @@ void stringToVector() {
 
 string vectorToString() {
 	string returnStr;
-	for (int i = 0; i < savingSentences.size(); i++) {
+	int size = savingSentences.size();
+	for (int i = 0; i < size; i++) {
 		returnStr += savingSentences[i];
 	}
 	return returnStr;
@@ -211,7 +212,9 @@ int main() {
 					string newSentence;
 					bool inserted = false;
 
-					for (int i = 0; i < getstrFromSavingSentence.length(); i++) {
+					int getstrFromSavingSentenceLength = getstrFromSavingSentence.length();
+
+					for (int i = 0; i < getstrFromSavingSentenceLength; i++) {
 						if ((getstrFromSavingSentence[i] == ' ')&&!inserted)countForInsert++;
 						if ((countForInsert == col) && !inserted) {
 							if (col == 0) {
@@ -253,10 +256,12 @@ int main() {
 					ssInt2 >> col;
 
 					string sentenceWithDeleteWord = savingSentences[row - 1];
-					string newSentence;
+					string newSentence="";
+
+					int sentenceWithDeleteWordLength = sentenceWithDeleteWord.length();
 
 					int count = 0;
-					for (int i = 0; i < sentenceWithDeleteWord.length(); i++)
+					for (int i = 0; i < sentenceWithDeleteWordLength; i++)
 					{
 
 						if (sentenceWithDeleteWord[i]==' ') {
@@ -280,8 +285,9 @@ int main() {
 					string substr = instruction.substr(2, instruction.length() - 3);
 					int deleteLocationX = -1;
 					int deleteLocationY = -1;
+					int savingSentencesSize = savingSentences.size();
 
-					for (int i = 0; i < savingSentences.size(); i++) {
+					for (int i = 0; i < savingSentencesSize; i++) {
 						string isContain = savingSentences[i];
 						
 						deleteLocationX = isContain.find(substr);
@@ -294,14 +300,15 @@ int main() {
 					if (deleteLocationX != -1 && deleteLocationY != -1) {
 						string fixed = savingSentences[deleteLocationY];
 						string newSentence;
-						for (int i = 0; i < fixed.size(); i++) {
+						int substrLength = substr.length();
+						int fixedSize = fixed.size();
+						for (int i = 0; i < fixedSize; i++) {
 							
-							if ( deleteLocationX <= i && i <= substr.length()+ deleteLocationX) {
+							if ( deleteLocationX <= i && i <= substrLength + deleteLocationX) {
 								continue;
 							}
 							newSentence += fixed[i];
 						}
-						cout << newSentence << endl;
 						savingSentences[deleteLocationY] = newSentence;
 					}
 					else {
@@ -326,7 +333,9 @@ int main() {
 					string originString = tokens[0];
 					string replaceString = tokens[1];
 
-					for (int i = 0; i < savingSentences.size(); i++) {
+					int savingSentencesSize = savingSentences.size();
+
+					for (int i = 0; i < savingSentencesSize; i++) {
 						string buf = savingSentences[i];
 						int x = buf.find(originString);
 						if (x != -1) {
