@@ -16,23 +16,34 @@ bool isChanged = false;
 //n에 따른 매개변수가 필요.
 void showInitTextView(int n) {
 	int size = savingSentences.size();
+	int vectorSizeOfFirstLine = (n - 1) * 20 + 1;
+	int lackOfLine = -1;
 	for (int i = (n-1)*20+1; i < n*20 + 1; i++) {
-		/* 이곳에서 만약 사이즈 보다 크다면 빈칸 출력 말고 앞에 출력하는 for문 넣기*/
-		if (i < 10) {
-			cout << " " << i << "| ";
-		}
-		else{
-			cout << i << "| ";
-		}
 		
-		if (i >= size) {
+		if (vectorSizeOfFirstLine+20 > size) {
+			lackOfLine = (20 + vectorSizeOfFirstLine)-size;
+			cout << i - lackOfLine << "| ";
+		}
+		else
+		{
+			if (i < 10) {
+				cout << " " << i << "| ";
+			}
+			else{
+				cout << i << "| ";
+			}
+		}
+
+		if (vectorSizeOfFirstLine + 20 > size) {
+			cout << savingSentences[i - 1 - lackOfLine];
 			cout << "\n";
 		}
-		if (i < size) {
+		else if (i < size) {
 			cout << savingSentences[i-1];
 			cout << "\n";
 		}
 	}
+	
 }
 
 void saveAndExit() {
@@ -49,6 +60,13 @@ void saveAndExit() {
 void getInitText() {
 	ifstream fin("test.txt");
 	//int count = 0;
+	
+	// 이것도 error클래스의 멤버변수로 넣기?
+	if (fin.peek() == ifstream::traits_type::eof()) {
+		cout << "Error opening fild" << endl;
+		exit(0);
+	}
+
 
 	string str="";
 
@@ -110,6 +128,7 @@ bool isValid(string str) {
 	return false;
 }
 
+
 void stringToVector() {
 	string str;
 	int count = 0;
@@ -129,6 +148,7 @@ void stringToVector() {
 
 		++count;
 	}
+	savingSentences.push_back(str);
 	lastPage = (savingSentences.size() / 20)+1;
 }
 
