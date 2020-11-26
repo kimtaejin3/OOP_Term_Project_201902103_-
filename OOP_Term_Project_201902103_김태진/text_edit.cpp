@@ -13,6 +13,8 @@ int page = 1;
 int lastPage;
 bool isChanged = false;
 string result = "";
+string instruction = "";
+
 
 //라인이 20개 이내일 때와 20개 이상일 때를 구분
 void showInitTextView20line() {
@@ -81,22 +83,22 @@ void saveAndExit() {
 
 void getInitText() {
 	ifstream fin("test.txt");
-	
+
 	if (fin.peek() == ifstream::traits_type::eof()) {
 		cout << "디렉토리에서 test.txt를 찾지 못했습니다." << endl;
 		exit(0);
 	}
 
-	string str="";
+	string str = "";
 
 	while (!fin.eof()) {
 		string buf;
 		fin >> buf;
-		str += buf+" ";
+		str += buf + " ";
 
 		savingSentencesWithString += str;
 		str = "";
-	} 
+	}
 
 	fin.close();
 }
@@ -109,26 +111,51 @@ void make_bottom(string result) {
 	make_boundary();
 	cout << "n:다음페이지, p:이전페이지, i:삽입, d:삭제, c:변경, s:찾기, t:저장후종료\n";
 	make_boundary();
-	cout << "(콘솔메시지) "<< result <<"\n";
+	cout << "(콘솔메시지) " << result << "\n";
 	make_boundary();
 	cout << "입력: ";
 }
 
-/*
+
+void stringToVector() {
+	string str;
+	int count = 0;
+
+	savingSentences.clear();
+	int length = savingSentencesWithString.length();
+
+	for (int i = 0; i < length; i++) {
+
+		str += savingSentencesWithString[i];
+
+		if (count > 50 && savingSentencesWithString[i] == ' ') {
+			savingSentences.push_back(str);
+			str = "";
+			count = 0;
+		}
+
+		++count;
+	}
+	savingSentences.push_back(str);
+	lastPage = (savingSentences.size() / 20) + 1;
+}
+
+string vectorToString() {
+	string returnStr;
+	int size = savingSentences.size();
+	for (int i = 0; i < size; i++) {
+		returnStr += savingSentences[i];
+	}
+	return returnStr;
+}
+
+
 class Strategy {
 public:
-	virtual void doOperation() {
-
-	}
+	virtual void doOperation() = 0;
 };
 
-class Insert:Strategy {
-public:
-	virtual void doOperation() {
 
-	}
-};
-*/
 
 class ConfirmValidation {
 public:
@@ -146,6 +173,10 @@ public:
 	}
 
 	bool isOver(int row, int col) {
+		if (row == 0) {
+			result = "0번째 라인은 존재하지 않습니다.";
+			return false;
+		}
 		int size = savingSentences.size();
 		if (page == lastPage) {
 			if (row > size) {
@@ -153,20 +184,20 @@ public:
 				return false;
 			}
 		}
-		else if (row >page*20) {
+		else if (row > page * 20) {
 			result = "현재 출력창에는 " + to_string(row) + "라인이 존재하지 않습니다.";
 			return false;
 		}
 
 		int lineLength = savingSentences[row - 1].length();
-		int maxCol=0;
+		int maxCol = 0;
 		for (int i = 0; i < lineLength; i++) {
 			if (savingSentences[row - 1][i] == ' ') {
 				++maxCol;
 			}
 		}
 		if (col > maxCol) {
-			result = to_string(col)+"번째 단어가 존재하지 않습니다.";
+			result = to_string(col) + "번째 단어가 존재하지 않습니다.";
 			return false;
 		}
 		return true;
@@ -195,47 +226,216 @@ public:
 	}
 };
 
-void stringToVector() {
-	string str;
-	int count = 0;
-	
-	savingSentences.clear();
-	int length = savingSentencesWithString.length();
+class Insert:public Strategy {
+	ConfirmValidation confirmVal;
+public:
+	void doOperation() {
+		if (confirmVal.isValid(instruction)) {
+			string substr = instruction.substr(2, instruction.length() - 3);
+			vector<string> tokens;
+			string buf;
+			istringstream iss(substr);
 
-	for (int i = 0; i < length; i++) {
-		
-		str += savingSentencesWithString[i];
+			while (getline(iss, buf, ',')) {
+				tokens.push_back(buf);
+			}
 
-		if (count > 50 && savingSentencesWithString[i] == ' ') {
-			savingSentences.push_back(str);
-			str = "";
-			count = 0;
+			if (confirmVal.InsertInstructionIsWrong(tokens)) {
+				int row = 0;
+				stringstream ssInt(tokens[0]);
+				ssInt >> row;
+				int col = 0;
+				stringstream ssInt2(tokens[1]);
+				ssInt2 >> col;
+				if (confirmVal.isOver(row, col)) {
+
+					string InsertingStr;
+					InsertingStr = tokens[2];
+
+					string getstrFromSavingSentence = savingSentences[row - 1];
+
+					int countForInsert = 0;
+					string newSentence;
+					bool inserted = false;
+
+					int getstrFromSavingSentenceLength = getstrFromSavingSentence.length();
+
+					for (int i = 0; i < getstrFromSavingSentenceLength; i++) {
+						if ((getstrFromSavingSentence[i] == ' ') && !inserted)countForInsert++;
+						if ((countForInsert == col) && !inserted) {
+							if (col == 0) {
+								newSentence += InsertingStr + " ";
+								i--;
+							}
+							else
+							{
+								newSentence += " " + InsertingStr + " ";
+							}
+							inserted = true;
+							continue;
+						}
+
+						newSentence += getstrFromSavingSentence[i];
+
+					}
+					savingSentences[row - 1] = newSentence;
+					savingSentencesWithString = vectorToString();
+				}
+			}
 		}
-
-		++count;
 	}
-	savingSentences.push_back(str);
-	lastPage = (savingSentences.size() / 20)+1;
-}
+};
 
-string vectorToString() {
-	string returnStr;
-	int size = savingSentences.size();
-	for (int i = 0; i < size; i++) {
-		returnStr += savingSentences[i];
+class Delete :public Strategy {
+	ConfirmValidation confirmVal;
+public:
+	void doOperation() {
+
+		if (confirmVal.isValid(instruction)) {
+			string substr = instruction.substr(2, instruction.length() - 3);
+			vector<string> tokens;
+			string buf;
+			istringstream iss(substr);
+
+			while (getline(iss, buf, ',')) {
+				tokens.push_back(buf);
+			}
+
+			int row = 0;
+			stringstream ssInt(tokens[0]);
+			ssInt >> row;
+
+			int col = 0;
+			stringstream ssInt2(tokens[1]);
+			ssInt2 >> col;
+
+			string sentenceWithDeleteWord = savingSentences[row - 1];
+			string newSentence = "";
+
+			int sentenceWithDeleteWordLength = sentenceWithDeleteWord.length();
+
+			int count = 0;
+			for (int i = 0; i < sentenceWithDeleteWordLength; i++)
+			{
+
+				if (sentenceWithDeleteWord[i] == ' ') {
+					++count;
+				}
+				if (count == col - 1) {
+					continue;
+				}
+				if (col == 1 && count == col && sentenceWithDeleteWord[i] == ' ') {
+					continue;
+				}
+				newSentence += sentenceWithDeleteWord[i];
+
+			}
+			savingSentences[row - 1] = newSentence;
+			savingSentencesWithString = vectorToString();
+		}
 	}
-	return returnStr;
-}
+};
+
+class Swap :public Strategy {
+	ConfirmValidation confirmVal;
+public:
+	void doOperation() {
+		if (confirmVal.isValid(instruction)) {
+			string substr = instruction.substr(2, instruction.length() - 3);
+			int deleteLocationX = -1;
+			int deleteLocationY = -1;
+			int savingSentencesSize = savingSentences.size();
+
+			for (int i = 0; i < savingSentencesSize; i++) {
+				string isContain = savingSentences[i];
+
+				deleteLocationX = isContain.find(substr);
+				if (deleteLocationX != -1) {
+					deleteLocationY = i;
+					break;
+				}
+			}
+
+			if (deleteLocationX != -1 && deleteLocationY != -1) {
+				string fixed = savingSentences[deleteLocationY];
+				string newSentence;
+				int substrLength = substr.length();
+				int fixedSize = fixed.size();
+				for (int i = 0; i < fixedSize; i++) {
+
+					if (deleteLocationX <= i && i <= substrLength + deleteLocationX) {
+						continue;
+					}
+					newSentence += fixed[i];
+				}
+				savingSentences[deleteLocationY] = newSentence;
+			}
+			else {
+				result += "not found";
+			}
+
+			savingSentencesWithString = vectorToString();
+			savingSentencesWithString = substr + " " + savingSentencesWithString;
+		}
+	}
+};
+
+class Change :public Strategy {
+	ConfirmValidation confirmVal;
+public:
+	void doOperation() {
+		if (confirmVal.isValid(instruction)) {
+			string substr = instruction.substr(2, instruction.length() - 3);
+			vector<string> tokens;
+			string buf;
+			istringstream iss(substr);
+
+			while (getline(iss, buf, ',')) {
+				tokens.push_back(buf);
+			}
+
+			string originString = tokens[0];
+			string replaceString = tokens[1];
+
+			int savingSentencesSize = savingSentences.size();
+
+			for (int i = 0; i < savingSentencesSize; i++) {
+				string buf = savingSentences[i];
+				int x = buf.find(originString);
+				if (x != -1) {
+					int size = originString.size();
+					buf.replace(x, size, replaceString);
+					savingSentences[i] = buf;
+				}
+			}
+
+			savingSentencesWithString = vectorToString();
+		}
+	}
+};
+
+class Context {
+	Strategy* strategy;
+public:
+	Context(Strategy* s) {
+		strategy = s;
+	}
+	void executionStrategy() {
+		strategy->doOperation();
+	}
+};
+
+
 
 int main() {
-
-	string instruction="";
+	Context* context;
+	//string instruction = "";
 	ConfirmValidation confirmVal;
 	getInitText();
 
 	while (1) {
 		stringToVector();
-		
+
 		showInitTextView(page);
 		make_bottom(result);
 		result = "";
@@ -261,186 +461,33 @@ int main() {
 					saveAndExit();
 				}
 			}
-			
-			
 		}
 		else {
 			if (instruction.at(0) == 'i') {
-				if (confirmVal.isValid(instruction)) {
-					string substr = instruction.substr(2, instruction.length()-3);
-					vector<string> tokens;
-					string buf;
-					istringstream iss(substr);
-
-					while (getline(iss,buf,',')) {
-						tokens.push_back(buf);
-					}
-
-					if (confirmVal.InsertInstructionIsWrong(tokens)) {
-						int row = 0;
-						stringstream ssInt(tokens[0]);
-						ssInt >> row;
-						int col = 0;
-						stringstream ssInt2(tokens[1]);
-						ssInt2 >> col;
-						if (confirmVal.isOver(row,col)) {
-
-							string InsertingStr;
-							InsertingStr = tokens[2];
-
-							string getstrFromSavingSentence = savingSentences[row-1];
-	
-							int countForInsert = 0;
-							string newSentence;
-							bool inserted = false;
-
-							int getstrFromSavingSentenceLength = getstrFromSavingSentence.length();
-
-							for (int i = 0; i < getstrFromSavingSentenceLength; i++) {
-								if ((getstrFromSavingSentence[i] == ' ')&&!inserted)countForInsert++;
-								if ((countForInsert == col) && !inserted) {
-									if (col == 0) {
-										newSentence += InsertingStr + " ";
-										i--;
-									}
-									else
-									{
-										newSentence += " "+InsertingStr+" ";
-									}
-									inserted = true;
-									continue;
-								}
-						
-								newSentence += getstrFromSavingSentence[i];
-						
-							}
-							savingSentences[row - 1] = newSentence;
-							savingSentencesWithString = vectorToString();
-						}
-					}
-				}
+				context = new Context(new Insert());
+				context->executionStrategy();
 			}
 			else if (instruction.at(0) == 'd') {
-				if (confirmVal.isValid(instruction)) {
-					string substr = instruction.substr(2, instruction.length() - 3);
-					vector<string> tokens;
-					string buf;
-					istringstream iss(substr);
-
-					while (getline(iss, buf, ',')) {
-						tokens.push_back(buf);
-					}
-
-					int row = 0;
-					stringstream ssInt(tokens[0]);
-					ssInt >> row;
-
-					int col = 0;
-					stringstream ssInt2(tokens[1]);
-					ssInt2 >> col;
-
-					string sentenceWithDeleteWord = savingSentences[row - 1];
-					string newSentence="";
-
-					int sentenceWithDeleteWordLength = sentenceWithDeleteWord.length();
-
-					int count = 0;
-					for (int i = 0; i < sentenceWithDeleteWordLength; i++)
-					{
-
-						if (sentenceWithDeleteWord[i]==' ') {
-							++count;
-						}
-						if (count == col - 1) {
-							continue;
-						}
-						if (col == 1&&count==col&& sentenceWithDeleteWord[i] == ' ') {
-							continue;
-						}
-						newSentence += sentenceWithDeleteWord[i];
-
-					}
-					savingSentences[row - 1] = newSentence;
-					savingSentencesWithString = vectorToString();
-				}
+				context = new Context(new Delete());
+				context->executionStrategy();
 			}
 			else if (instruction.at(0) == 's') {
-				if (confirmVal.isValid(instruction)) {
-					string substr = instruction.substr(2, instruction.length() - 3);
-					int deleteLocationX = -1;
-					int deleteLocationY = -1;
-					int savingSentencesSize = savingSentences.size();
-
-					for (int i = 0; i < savingSentencesSize; i++) {
-						string isContain = savingSentences[i];
-						
-						deleteLocationX = isContain.find(substr);
-						if (deleteLocationX != -1) {
-							deleteLocationY = i;
-							break;
-						}
-					}
-
-					if (deleteLocationX != -1 && deleteLocationY != -1) {
-						string fixed = savingSentences[deleteLocationY];
-						string newSentence;
-						int substrLength = substr.length();
-						int fixedSize = fixed.size();
-						for (int i = 0; i < fixedSize; i++) {
-							
-							if ( deleteLocationX <= i && i <= substrLength + deleteLocationX) {
-								continue;
-							}
-							newSentence += fixed[i];
-						}
-						savingSentences[deleteLocationY] = newSentence;
-					}
-					else {
-						result += "not found";
-					}
-					
-					savingSentencesWithString = vectorToString();
-					savingSentencesWithString = substr + " " + savingSentencesWithString;
-				}
+				context = new Context(new Swap());
+				context->executionStrategy();
 			}
 			else if (instruction.at(0) == 'c') {
-				if (confirmVal.isValid(instruction)) {
-					string substr = instruction.substr(2, instruction.length() - 3);
-					vector<string> tokens;
-					string buf;
-					istringstream iss(substr);
-
-					while (getline(iss, buf, ',')) {
-						tokens.push_back(buf);
-					}
-
-					string originString = tokens[0];
-					string replaceString = tokens[1];
-
-					int savingSentencesSize = savingSentences.size();
-
-					for (int i = 0; i < savingSentencesSize; i++) {
-						string buf = savingSentences[i];
-						int x = buf.find(originString);
-						if (x != -1) {
-							int size = originString.size();
-							buf.replace(x,size,replaceString);
-							savingSentences[i] = buf;
-						}
-					}
-
-					savingSentencesWithString = vectorToString();
-				}
+				context = new Context(new Change());
+				context->executionStrategy();
 			}
 			else {
 				result = "(" + instruction + ")" + " is not valid instruction";
 			}
 
 		}
-		
+
 		make_boundary();
 	}
-	
-	
+
+
 	return 0;
 }
