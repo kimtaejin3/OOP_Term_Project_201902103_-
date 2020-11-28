@@ -204,7 +204,7 @@ public:
 	}
 
 	bool InsertInstructionIsWrong(vector<string> vec) {
-		if (vec.size() < 3) {
+		if (vec.size() < 3|| vec.size() > 3) {
 			result = "인자 세 개를 제대로 입력하세요.";
 			return false;
 		}
@@ -222,6 +222,32 @@ public:
 			result = "당신이 입력하고 싶은 문자열의 길이가 너무 깁니다.";
 			return false;
 		}
+		return true;
+	}
+
+	bool DeleteInstructionIsWrong(vector<string> vec) {
+		if (vec.size() < 2 || vec.size()>2) {
+			result = "인자 두 개를 제대로 입력하세요.";
+			return false;
+		}
+
+		if (!has_only_digits(vec[0])) {
+			result = "숫자(양수)만 입력해 주세요.";
+			return false;
+		}
+		if (!has_only_digits(vec[1])) {
+			result = "숫자(양수)만 입력해 주세요.";
+			return false;
+		}
+		return true;
+	}
+
+	bool ChangeInstructionIsWrong(vector<string> vec) {
+		if (vec.size() < 2 || vec.size() > 2) {
+			result = "인자 두 개를 제대로 입력하세요.";
+			return false;
+		}
+		
 		return true;
 	}
 };
@@ -301,37 +327,44 @@ public:
 				tokens.push_back(buf);
 			}
 
-			int row = 0;
-			stringstream ssInt(tokens[0]);
-			ssInt >> row;
+			if (confirmVal.DeleteInstructionIsWrong(tokens)) {
 
-			int col = 0;
-			stringstream ssInt2(tokens[1]);
-			ssInt2 >> col;
+				int row = 0;
+				stringstream ssInt(tokens[0]);
+				ssInt >> row;
 
-			string sentenceWithDeleteWord = savingSentences[row - 1];
-			string newSentence = "";
+				int col = 0;
+				stringstream ssInt2(tokens[1]);
+				ssInt2 >> col;
 
-			int sentenceWithDeleteWordLength = sentenceWithDeleteWord.length();
+				if (confirmVal.isOver(row, col)) {
 
-			int count = 0;
-			for (int i = 0; i < sentenceWithDeleteWordLength; i++)
-			{
+					string sentenceWithDeleteWord = savingSentences[row - 1];
+					string newSentence = "";
 
-				if (sentenceWithDeleteWord[i] == ' ') {
-					++count;
+					int sentenceWithDeleteWordLength = sentenceWithDeleteWord.length();
+
+					int count = 0;
+					for (int i = 0; i < sentenceWithDeleteWordLength; i++)
+					{
+
+						if (sentenceWithDeleteWord[i] == ' ') {
+							++count;
+						}
+						if (count == col - 1) {
+							continue;
+						}
+						if (col == 1 && count == col && sentenceWithDeleteWord[i] == ' ') {
+							continue;
+						}
+						newSentence += sentenceWithDeleteWord[i];
+
+					}
+					savingSentences[row - 1] = newSentence;
+					savingSentencesWithString = vectorToString();
 				}
-				if (count == col - 1) {
-					continue;
-				}
-				if (col == 1 && count == col && sentenceWithDeleteWord[i] == ' ') {
-					continue;
-				}
-				newSentence += sentenceWithDeleteWord[i];
-
 			}
-			savingSentences[row - 1] = newSentence;
-			savingSentencesWithString = vectorToString();
+
 		}
 	}
 };
@@ -369,13 +402,13 @@ public:
 					newSentence += fixed[i];
 				}
 				savingSentences[deleteLocationY] = newSentence;
+				savingSentencesWithString = vectorToString();
+				savingSentencesWithString = substr + " " + savingSentencesWithString;
 			}
 			else {
 				result += "not found";
 			}
 
-			savingSentencesWithString = vectorToString();
-			savingSentencesWithString = substr + " " + savingSentencesWithString;
 		}
 	}
 };
@@ -394,22 +427,25 @@ public:
 				tokens.push_back(buf);
 			}
 
-			string originString = tokens[0];
-			string replaceString = tokens[1];
+			if (confirmVal.ChangeInstructionIsWrong(tokens)) {
+				string originString = tokens[0];
+				string replaceString = tokens[1];
 
-			int savingSentencesSize = savingSentences.size();
+				int savingSentencesSize = savingSentences.size();
 
-			for (int i = 0; i < savingSentencesSize; i++) {
-				string buf = savingSentences[i];
-				int x = buf.find(originString);
-				if (x != -1) {
-					int size = originString.size();
-					buf.replace(x, size, replaceString);
-					savingSentences[i] = buf;
+				for (int i = 0; i < savingSentencesSize; i++) {
+					string buf = savingSentences[i];
+					int x = buf.find(originString);
+					if (x != -1) {
+						int size = originString.size();
+						buf.replace(x, size, replaceString);
+						savingSentences[i] = buf;
+					}
 				}
+
+				savingSentencesWithString = vectorToString();
 			}
 
-			savingSentencesWithString = vectorToString();
 		}
 	}
 };
@@ -429,8 +465,6 @@ public:
 
 int main() {
 	Context* context;
-	//string instruction = "";
-	ConfirmValidation confirmVal;
 	getInitText();
 
 	while (1) {
@@ -439,7 +473,6 @@ int main() {
 		showInitTextView(page);
 		make_bottom(result);
 		result = "";
-		//cin >> instruction;
 		getline(cin, instruction);
 		if (instruction.length() < 2) {
 			if (!instruction.compare("n") || !instruction.compare("p") || !instruction.compare("t")) {
