@@ -72,12 +72,8 @@ void showInitTextView(int n) {
 
 void saveAndExit() {
 	ofstream fout("test.txt");
-	string saveTextChange = "";
-	int size = savingSentences.size();
-	for (int i = 0; i < size; i++) {
-		saveTextChange += savingSentences[i];
-	}
-	fout << saveTextChange;
+	
+	fout << savingSentencesWithString;
 	exit(0);
 }
 
@@ -128,6 +124,7 @@ void stringToVector() {
 
 		str += savingSentencesWithString[i];
 
+		//단어가 너무 긴 경우(25알파벳)에도 한 줄에 출력 (한 단어는 두 줄에 걸쳐 나올 수 없으므로)
 		if (count > 50 && savingSentencesWithString[i] == ' ') {
 			savingSentences.push_back(str);
 			str = "";
@@ -396,7 +393,10 @@ public:
 				int fixedSize = fixed.size();
 				for (int i = 0; i < fixedSize; i++) {
 
-					if (deleteLocationX <= i && i <= substrLength + deleteLocationX) {
+					if (deleteLocationX <= i && i < substrLength + deleteLocationX+1) {
+						if (i== substrLength + deleteLocationX&&fixed[i] != ' ') {
+							newSentence += fixed[i];
+						}
 						continue;
 					}
 					newSentence += fixed[i];
